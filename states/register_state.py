@@ -1,0 +1,17 @@
+from aiogram.fsm.state import State, StatesGroup
+class RegisterState(StatesGroup):
+    full_name = State()
+    sex = State()
+    phone = State()
+    email = State()
+    education_type = State()
+    school_name = State()
+    grade = State()
+    university_name = State()
+    university_year = State()
+    department = State()
+    languages = State()
+    birth_date = State()
+    courses = State()
+    availability = State()
+    confirm = State()

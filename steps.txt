@@ -36,3 +36,66 @@ kayykof_bot/
 │   └── notifications.py
 │
 └── utils/
+
+2. Database set up 
+=> Database set up on supabase data base 
+3. Creating tables for students on supabase 
+    "create table students (
+    id bigint generated always as identity primary key,
+    telegram_id text unique,
+    full_name text,
+    sex text,
+    phone text,
+    email text,
+    education_type text,
+    school_name text,
+    grade text,
+    university_name text,
+    university_year text,
+    department text,
+    languages text[],
+    birth_date text,
+    availability text,
+    payment_screenshot text,
+    status text default 'pending',
+    approved_by text,
+    created_at timestamp default now()
+);"
+
+4. Creating table for course 
+"create table student_courses (
+    id bigint generated always as identity primary key,
+    student_id bigint references students(id),
+    course_name text
+);"
+5. Creating admin table 
+"create table admins (
+    id bigint generated always as identity primary key,
+    telegram_id text unique
+);"
+
+6. The setting tables 
+"create table settings (
+    id bigint generated always as identity primary key,
+    registration_open boolean default true,
+    max_courses integer default 2
+);"
+
+7. Creating students State => register_state.py
+"from aiogram.fsm.state import State, StatesGroup
+class RegisterState(StatesGroup):
+    full_name = State()
+    sex = State()
+    phone = State()
+    email = State()
+    education_type = State()
+    school_name = State()
+    grade = State()
+    university_name = State()
+    university_year = State()
+    department = State()
+    languages = State()
+    birth_date = State()
+    courses = State()
+    availability = State()
+    confirm = State()"
