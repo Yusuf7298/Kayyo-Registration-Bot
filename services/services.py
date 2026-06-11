@@ -1,0 +1,5 @@
+School = ["Graded School", "High School", "College","University"]
+Grade_School = ["1st Grade", "2nd Grade", "3rd Grade", "4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade"]
+High_School = ["9th Grade", "10th Grade", "11th Grade", "12th Grade"]
+University = ["Bachelor's Degree", "Master's Degree", "PhD"]
+Year = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "6th Year", "7th Year"]
