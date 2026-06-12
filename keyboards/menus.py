@@ -94,9 +94,18 @@ def approved_students_keyboard(telegram_id):
         inline_keyboard=[
             [InlineKeyboardButton(text="❌ Reject", callback_data=f"reject:{telegram_id}")],
             [InlineKeyboardButton(text="👁 View Details", callback_data=f"view_details:{telegram_id}")],
-            [InlineKeyboardButton(text="✏️ Edit", callback_data=f"edit_student:{telegram_id}")]
+            [InlineKeyboardButton(text="✏️ Edit", callback_data=f"edit_student:{telegram_id}")],
         ]
     )
+
+def bulk_approve_rejects():
+    return InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Approve Selected",callback_data="bulk_approve"),InlineKeyboardButton(text="❌ Reject Selected",callback_data="bulk_reject")
+        ]
+    ]
+)
 
 
 def rejected_students_keyboard(telegram_id):
@@ -105,6 +114,14 @@ def rejected_students_keyboard(telegram_id):
             [InlineKeyboardButton(text="✅ Approve", callback_data=f"approve:{telegram_id}")],
             [InlineKeyboardButton(text="👁 View Details", callback_data=f"view_details:{telegram_id}")],
             [InlineKeyboardButton(text="✏️ Edit", callback_data=f"edit_student:{telegram_id}")]
+        ]
+    )
+
+def view_students_keyboard(telegram_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="👁 View Details", callback_data=f"view_details:{telegram_id}"),InlineKeyboardButton(text="✏️ Edit", callback_data=f"edit_student:{telegram_id}")],
+            [InlineKeyboardButton(text="☑️ Select", callback_data=f"select_student:{telegram_id}"),InlineKeyboardButton(text="🗑 Clear Selection",callback_data="clear_selection")]
         ]
     )
 
@@ -247,6 +264,8 @@ def non_admin_keyboard():
                 KeyboardButton(text="✏️ Edit Registration"),
                 KeyboardButton(text="💬 Feedback")
             ],
+            [
+                KeyboardButton(text="📄 Admission Slip")],
             [
                 KeyboardButton(text="🌟 Follow us"),
                 KeyboardButton(text="📋Avalibale Courses")

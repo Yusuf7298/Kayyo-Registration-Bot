@@ -592,6 +592,30 @@ def get_statistics():
     conn.close()
     return stats
 
+def dep_get_statistics(department):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT
+        COUNT(*),
+        SUM(CASE WHEN status='Approved' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN status='Rejected' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN status='Pending' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN education_status='Student' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN education_status='Graduate' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN education_status='Dropout' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN language='English' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN language='Afaan Oromoo' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN language='Amharic' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN gender='male' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN gender='female' THEN 1 ELSE 0 END)
+    FROM students
+    WHERE department = ?
+    """, (department,))
+    stats = cursor.fetchone()
+    conn.close()
+    return stats
+
 def get_all_telegram_ids():
     conn = get_connection()
     cursor = conn.cursor()
@@ -664,7 +688,6 @@ def get_departments():
 def get_courses():
     conn = get_connection()
     cursor = conn.cursor()
-
     cursor.execute("""
         SELECT
             department_id,

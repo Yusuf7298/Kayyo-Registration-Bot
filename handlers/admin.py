@@ -27,6 +27,7 @@ from database.db import (
     get_department_name,
     get_department_students,
     get_departments_statistics,
+    get_student,
     is_admin,
     open_registration,
     reject_student,
@@ -59,6 +60,7 @@ from database.db import (
     SUPER_ADMIN_ID
 )
 from keyboards.menus import (
+    bulk_approve_rejects,
     department_keyboard,
     student_admin_keyboard,
     admin_actions_keyboard,
@@ -71,12 +73,14 @@ from keyboards.menus import (
     course_management_keyboard,
     export_keyboard,
     courses_keyboard,
-    admins_role
+    admins_role,
+    view_students_keyboard
 )
 
 router = Router()
 PAGE_SIZE = 5
 
+selected_students = {}
 async def notify_student(bot, telegram_id: int, text: str) -> bool:
     try:
         await bot.send_message(telegram_id, text)
@@ -409,7 +413,6 @@ async def handle_search_query(message: Message, state: FSMContext):
             reply_markup=student_admin_keyboard(student[0])
         )
     await state.clear()
-
 @router.callback_query(F.data.startswith("delete_student:"))
 async def delete_student_callback(callback: CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
@@ -888,6 +891,7 @@ async def admins_list_handler(callback: CallbackQuery):
     if callback.message:
         await callback.message.answer(text)
 
+
 @router.callback_query(F.data == "department_students")
 async def departments_students(callback: CallbackQuery):
     admin = get_admin_role(callback.from_user.id)  # type: ignore
@@ -896,15 +900,122 @@ async def departments_students(callback: CallbackQuery):
     role, department = admin
     students = get_department_students(department)
     if not students:
-        await callback.message.answer("No students found.") # type: ignore
+        await callback.message.answer("No students found.")  # type: ignore
         return
-    text=f"Students list under {department} ({len(students)}) \n\n"
-    for roll, student in enumerate(students):
-        text +=f"      {department}-{roll+1}\n👤Full Name: {student[1]}\n📚 Course: {student[2]}\n📌 Status: {student[3]}\n\n"
-    await callback.message.answer(text) # type: ignore
+    await callback.message.answer(f"📋 Students under {department}\n\nTotal Students: {len(students)}")  # type: ignore
+    for roll, student in enumerate(students, start=1):
+        telegram_id = student[0]
+        text = f"""
+{department}-{roll}
 
+👤 Full Name: {student[1]}
+📚 Course: {student[2]}
+📌 Status: {student[3]}
+"""
+        await callback.message.answer(text,  reply_markup=view_students_keyboard(telegram_id)) # type: ignore
+    await callback.message.answer("📋 Bulk Actions", reply_markup= bulk_approve_rejects()) # type: ignore
 
+@router.callback_query(F.data.startswith("select_student:"))
+async def select_student(callback: CallbackQuery):
+    admin_id = callback.from_user.id
+    student_id = int(callback.data.split(":")[1]) # type: ignore
+    if admin_id not in selected_students:
+        selected_students[admin_id] = set()
+    if student_id in selected_students[admin_id]:
+        selected_students[admin_id].remove(student_id)
+    else:
+        selected_students[admin_id].add(student_id)
+    total = len(selected_students[admin_id])
+    await callback.answer(
+        f"Selected Students: {total}"
+    )
+
+@router.callback_query(F.data == "bulk_approve")
+async def bulk_approve(callback: CallbackQuery):
+    admin_id = callback.from_user.id
+    students = selected_students.get(admin_id, set())
+    if not students:
+        await callback.answer("No students selected",show_alert=True)
+        return
+    count = 0
+    for student_id in students:
+        student = get_student(student_id)
+        if student[10] == "Approved":
+            continue
+        approve_student(student_id)
+        await notify_student(
+            callback.bot,
+            student_id,
+            """
+🎉 Registration Approved
+
+Congratulations!
+
+Your registration has been approved.
+"""
+        )
+
+        count += 1
+
+    selected_students[admin_id] = set()
+    await callback.message.answer(f"✅ {count} students approved.") # type: ignore
+
+@router.callback_query(F.data == "bulk_reject")
+async def bulk_reject(callback: CallbackQuery):
+    admin_id = callback.from_user.id
+    students = selected_students.get(admin_id, set())
+    if not students:
+        await callback.answer("No students selected",show_alert=True)
+        return
+    count = 0
+    for student_id in students:
+        student = get_student(student_id)
+        if student[10] == "Rejected":
+            continue
+        reject_student(student_id)
+        await notify_student(
+            callback.bot,
+            student_id,
+            """
+❌ Registration Rejected
+Unfortunately your registration was not approved.
+"""
+        )
+        count += 1
+    selected_students[admin_id] = set()
+    await callback.message.answer( # type: ignore
+        f"❌ {count} students rejected."
+    )
+
+@router.callback_query(F.data == "bulk_delete")
+async def bulk_delete(callback: CallbackQuery):
+    admin_id = callback.from_user.id
+    students = selected_students.get(admin_id, set())
+    if not students:
+        await callback.answer("No students selected",show_alert=True)
+        return
+    count = 0
+    for student_id in students:
+        student = get_student(student_id)
+        if student[11] == "Rejected":
+            continue
+        delete_student(student_id)
+        await notify_student(
+            callback.bot,
+            student_id,
+            """
+❌ You are no longer to use @KaayyooKoof_bot
+Unfortunately your registration was not approved.
+"""
+        )
+        count += 1
+    selected_students[admin_id] = set()
+    await callback.message.answer( # type: ignore
+        f"❌ {count} students rejected.")
     
-        
-
+@router.callback_query(F.data == "clear_selection")
+async def clear_selection(callback: CallbackQuery):
+    admin_id = callback.from_user.id
+    selected_students[admin_id] = set()
+    await callback.answer("Selection cleared")
 

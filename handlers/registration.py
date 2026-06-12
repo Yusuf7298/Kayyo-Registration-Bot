@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import BufferedInputFile, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import BufferedInputFile, FSInputFile, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from states.states import Announcement, EditRegistration, Registration, Feedback 
@@ -12,6 +12,7 @@ from database.db import (
     dep_export_approved_students,
     dep_export_pending_students,
     dep_export_rejected_students,
+    dep_get_statistics,
     departments_approved_or_rejects,
     export_all_students,
     export_approved_students,
@@ -54,6 +55,7 @@ from keyboards.menus import (
     rejected_students_keyboard
 )
 from config.settings import ADMIN_ID
+from utils.pdf_generator import create_admission_pdf
 
 router = Router()
 COURSES_PAGE_SIZE = 5
@@ -184,7 +186,7 @@ async def select_course(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     course_id = int(callback.data.split("_")[1]) # type: ignore
     if course_is_full(course_id):
-        await callback.message.answer(f"🚫 Course Full This {get_course_name(course_id)} has reached its maximum capacity.Please choose another course.") # type: ignore
+        await callback.message.answer(f"🚫 Course Full This {get_course_name(course_id)} has reached its maximum capacity.Please choose another course.", reply_markup=departments_keyboard()) # type: ignore
         return
     course_name = get_course_name(course_id)
     await state.update_data(course_id=course_id, course=course_name)
@@ -657,7 +659,7 @@ async def export_rejected_handler(callback: CallbackQuery):
 async def export_statistics_handler(callback: CallbackQuery):
     user_id = callback.from_user.id
     departments=get_admin_role(user_id)[1]
-    stats = get_statistics()
+    stats = dep_get_statistics(departments)
     text = f"""
 {departments} REGISTRATION STATISTICS
 
@@ -678,5 +680,22 @@ Male: {stats[10]}
 Female: {stats[11]}
 """
     file = BufferedInputFile(text.encode("utf-8"), filename="statistics.txt")
-    await callback.message.answer_document(document=file, caption="📊 Statistics Export") # type: ignore
+    await callback.message.answer_document(document=file, caption=f"📊 {departments} Departments Statistics Export") # type: ignore
     await callback.answer()
+
+@router.message(F.text == "📄 Admission Slip")
+async def admission_slip(message: Message):
+    student = get_student(message.from_user.id) # type: ignore
+    if not student:
+        await message.answer("❌ You are not registered.")
+        return
+    if student[10] != "Approved":
+        await message.answer(
+            "❌ Admission slip is available only for approved students."
+        )
+        return
+    pdf_file = create_admission_pdf(student)
+    await message.answer_document(
+        document=FSInputFile(pdf_file),
+        caption="🎉 Your Admission Slip"
+    )
