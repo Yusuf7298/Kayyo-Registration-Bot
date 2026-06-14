@@ -3,13 +3,21 @@ from aiogram import Bot, Dispatcher
 from config.settings import BOT_TOKEN
 from handlers.registration import router as registration_router
 from handlers.admin import router as admin_router
+from handlers.membership import router as membership_router
 from handlers.start import router as start_router
+from handlers.membership_admin import router as membership_admin
+from handlers.verification import (
+router as verification_router
+)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 # include handlers
 dp.include_router(registration_router)
 dp.include_router(admin_router)
 dp.include_router(start_router)
+dp.include_router(membership_router)
+dp.include_router(verification_router)
+dp.include_router(membership_admin)
 async def main():
     print("Bot is starting...")
     await dp.start_polling(bot)

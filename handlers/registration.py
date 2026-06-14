@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, FSInputFile, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
-from states.states import Announcement, EditRegistration, Registration, Feedback 
+from states.states import Announcement, EditRegistration, MembershipRegistration, Registration, Feedback, SelectRegistration 
 from database.db import (
     course_is_full,
     dep_export_all_students,
@@ -24,6 +24,7 @@ from database.db import (
     get_courses_by_department,
     get_department_students_by_status,
     get_departments_statistics,
+    get_membership,
     get_pending_telegram_ids,
     get_rejected_telegram_ids,
     get_statistics,
@@ -45,6 +46,7 @@ from keyboards.menus import (
     courses_keyboard,
     dep_announcements_keyboard,
     dep_export_keyboard,
+    departmenstAdmin_keyboard,
     department_admin_keyboard,
     gender,
     language,
@@ -52,6 +54,7 @@ from keyboards.menus import (
     admin_keyboard,
     departments_keyboard,
     non_admin_keyboard,
+    registration_type_keyboard,
     rejected_students_keyboard
 )
 from config.settings import ADMIN_ID
@@ -81,25 +84,36 @@ def generate_courses_keyboard(current_page: int, total_items: int) -> InlineKeyb
         buttons.append(nav_row)
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-@router.message(F.text == "📝 Register")
-async def register_command(message: Message, state: FSMContext):
-    student = get_student(message.from_user.id) # type: ignore
+@router.message(F.text.in_(["📝 Register","🎓 Summer Camp"]))
+async def register_command(message:Message,state:FSMContext):
+    user_id = message.from_user.id # type: ignore
+    keyboard=departmenstAdmin_keyboard()
+    student=get_student(user_id)
+    if not is_admin(user_id):
+        keyboard = non_admin_keyboard()
     if student:
-        await message.answer("✅ You have already registered.\n\nUse 📌 Status to check your registration status.")
+        await message.answer(f"Well come back {message.from_user.first_name}\n You already Already registered. Use 📌 Status to check your registrations status", reply_markup=keyboard) # type: ignore
         return
-    if registration_status() == 0:
-        await message.answer(
-        """
-🚫 Registration Closed
 
-The registration period has ended.
-
-Please contact the administrator.
-"""
-    )
-        return
-    await message.answer("Please enter your full name:")
+    await message.answer("Enter Full Name:")
     await state.set_state(Registration.full_name)
+@router.message(SelectRegistration.type,F.text=="🪪 Membership")
+async def choose_membership(message:Message,state:FSMContext):
+    member=get_membership(message.from_user.id) # type: ignore
+    if member:
+        await message.answer(
+            "Already member."
+        )
+
+        return
+
+    await message.answer(
+        "Enter Full Name:"
+    )
+
+    await state.set_state(
+        MembershipRegistration.full_name
+    )
 
 @router.message(Registration.full_name)
 async def get_fullname(message: Message, state: FSMContext):

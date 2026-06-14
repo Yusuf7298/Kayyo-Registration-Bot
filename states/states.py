@@ -48,5 +48,19 @@ class AddAdmin(StatesGroup):
 class RemoveAdmin(StatesGroup):
     waiting_telegram_id=State()
 
+class MembershipRegistration(StatesGroup):
+    full_name = State()
+    genders = State()
+    phone = State()
+    email = State()
+    occupation = State()
+    address = State()
+    membership_type = State()
+    duration = State()
+    photo = State()
+
+class SelectRegistration(StatesGroup):
+    type = State()
+
 
     

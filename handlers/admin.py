@@ -7,6 +7,7 @@ from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import BufferedInputFile, Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from config.settings import ADMIN_ID
+from utils.membership_pdf import create_membership_pdf
 from states.states import (
     AdminSearch,
     Announcement,
@@ -26,7 +27,6 @@ from database.db import (
     get_course_name,
     get_department_name,
     get_department_students,
-    get_departments_statistics,
     get_student,
     is_admin,
     open_registration,
@@ -60,6 +60,7 @@ from database.db import (
     SUPER_ADMIN_ID
 )
 from keyboards.menus import (
+    admin_keyboard,
     bulk_approve_rejects,
     department_keyboard,
     student_admin_keyboard,
@@ -74,7 +75,7 @@ from keyboards.menus import (
     export_keyboard,
     courses_keyboard,
     admins_role,
-    view_students_keyboard
+    view_students_keyboard,
 )
 
 router = Router()
@@ -108,6 +109,15 @@ def generate_pagination_keyboard(current_page: int, total_items: int, list_type:
         
     buttons.append([InlineKeyboardButton(text="🔙 Back to Main Panel", callback_data="back")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+@router.message(F.text == "🎓 Manage Summer Camp")
+async def summer_managements(message: Message):
+    user_id = message.from_user.id # type: ignore
+    if user_id != SUPER_ADMIN_ID:
+        await message.answer("Access denied.")
+    await message.answer("Super admin controls", reply_markup=admin_keyboard())
+
 
 @router.message(F.text.in_(["👥 Admin Panel", "🔄 Start Over"]))
 async def admin_command(message: Message):
@@ -1018,4 +1028,5 @@ async def clear_selection(callback: CallbackQuery):
     admin_id = callback.from_user.id
     selected_students[admin_id] = set()
     await callback.answer("Selection cleared")
+
 

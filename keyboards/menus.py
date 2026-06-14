@@ -4,9 +4,11 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton
 )
-from database.db import get_courses_by_department, get_departments, get_course_registered_count
-
-# --- Static Inline Keyboards ---
+from database.db import (get_courses_by_department,
+                          get_departments, 
+                          get_course_registered_count,
+                          get_membership_types,
+                          get_membership_durations)
 
 gender = InlineKeyboardMarkup(
     inline_keyboard=[
@@ -32,9 +34,6 @@ education_status = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="📚 Dropout", callback_data="Dropout")]
     ]
 )
-
-# --- Dynamic & Admin Inline Keyboards ---
-
 def student_admin_keyboard(telegram_id):
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -87,6 +86,52 @@ def admin_actions_keyboard():
                 InlineKeyboardButton(text="🔙 Back", callback_data="back")
             ]
         ]
+    )
+
+def members_admins():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+
+            [
+                KeyboardButton(
+                    text="👥 All Members"
+                )
+            ],
+
+            [
+                KeyboardButton(
+                    text="⏳ Pending Members"
+                ),
+
+                KeyboardButton(
+                    text="✅ Approved Members"
+                )
+            ],
+
+            [
+                KeyboardButton(
+                    text="❌ Rejected Members"
+                )
+            ],
+
+            [
+                KeyboardButton(
+                    text="📊 Membership Statistics"
+                ),
+
+                KeyboardButton(
+                    text="📤 Export Members"
+                )
+            ],
+
+            [
+                KeyboardButton(
+                    text="🔙 Back To Admin Menu"
+                )
+            ]
+
+        ],
+        resize_keyboard=True
     )
 
 def approved_students_keyboard(telegram_id):
@@ -177,10 +222,22 @@ def dep_announcements_keyboard():
 
 def departments_keyboard():
     keyboard = [
-        [InlineKeyboardButton(text=dept_name, callback_data=f"department_{dept_id}")]
+        [
+            InlineKeyboardButton(text=dept_name,callback_data=f"department_{dept_id}")
+        ]
         for dept_id, dept_name in get_departments()
     ]
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+    keyboard.append([
+        InlineKeyboardButton(
+            text="🔙 Back",
+            callback_data="back_registration"
+        )
+    ])
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=keyboard
+    )
 
 def department_keyboard():
     keyboard = [
@@ -204,6 +261,7 @@ def courses_keyboard(department_id):
                 callback_data=f"course_{course_id}"
             )
         ])
+    keyboard.append([InlineKeyboardButton(text="🔙 Back",callback_data=f"back_department:{department_id}")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
@@ -248,7 +306,9 @@ def departmenstAdmin_keyboard():
             [
                 KeyboardButton(text="ℹ️ Help"),
                 KeyboardButton(text="❌ Cancel")
-            ]
+            ],
+            [
+                KeyboardButton(text="🔙 Back To Main Menu")]
         ],
         resize_keyboard=True
     )
@@ -273,7 +333,8 @@ def non_admin_keyboard():
             [
                 KeyboardButton(text="ℹ️ Help"),
                 KeyboardButton(text="❌ Cancel")
-            ]
+            ],
+            [KeyboardButton(text="🔙 Back To Main Menu")]
         ],
         resize_keyboard=True
     )
@@ -283,6 +344,14 @@ def admin_keyboard():
         keyboard=[
             [KeyboardButton(text="👥 Admin Panel")],
             [KeyboardButton(text="🔄 Start Over")]
+        ],
+        resize_keyboard=True
+    )
+
+def member_admin():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🔙 Back To Admin Menu")]
         ],
         resize_keyboard=True
     )
@@ -379,6 +448,123 @@ def dep_export_keyboard():
                     text="📊 Statistics",
                     callback_data="dep_export_statistics"
                 )
+            ]
+        ]
+    )
+
+def membership_keyboard():
+    keyboard = [
+        [
+            KeyboardButton(text="🪪 Membership Registration")
+        ],
+        [
+            KeyboardButton(text="📌 Membership Status")
+        ]
+    ]
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
+        resize_keyboard=True
+    )
+
+def membership_types_keyboard():
+    keyboard=[]
+    for item in get_membership_types():
+        keyboard.append([InlineKeyboardButton(text=item[1],callback_data=f"member_type_{item[0]}")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Back",callback_data="member_back")])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def membership_duration_keyboard():
+    keyboard=[]
+    for item in get_membership_durations():
+        keyboard.append([InlineKeyboardButton(text=item[1],callback_data=f"member_duration_{item[0]}")])
+    keyboard.append([InlineKeyboardButton(text="🔙 Back",callback_data="member_type_back" )])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def membership_action_keyboard(telegram_id):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Approve",callback_data=f"approve_member:{telegram_id}"),
+                InlineKeyboardButton(text="❌ Reject",callback_data=f"reject_member:{telegram_id}"),
+                InlineKeyboardButton(text="👁 View Details", callback_data=f"view_details_members:{telegram_id}")
+            ]
+        ]
+    )
+
+def registration_choice_keyboard():
+
+    return ReplyKeyboardMarkup(
+
+        keyboard=[
+
+            [
+                KeyboardButton(text="🎓 Summer Camp"),
+                KeyboardButton(text="🪪 Membership")
+            ],
+            [
+                KeyboardButton(text="📅 Event Registrations"),
+                KeyboardButton(text="About Us")
+            ]
+
+
+        ],
+
+        resize_keyboard=True
+
+    )
+
+def membership_menu_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="🪪 Membership Registration"),
+                KeyboardButton(text="📌 Membership Status")],
+            [
+                KeyboardButton(text="🔄 Renew Membership"),
+                KeyboardButton(text="🆔 Download Membership Card")],
+            [
+                KeyboardButton(text="🔙 Back To Main Menu")
+            ]
+        ],
+        resize_keyboard=True
+    )
+def admin_panel_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🎓 Manage Summer Camp")],
+            [KeyboardButton(text="🪪 Manage Membership")],
+        ],
+        resize_keyboard=True
+    )
+
+def registration_type_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="☀️ Summer Camp")
+            ],
+            [
+                KeyboardButton(text="🪪 Membership")
+            ]
+        ],
+        resize_keyboard=True
+    )
+
+def membership_export_keyboard():
+
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📄 Export All", callback_data="export_all_members")
+            ],
+
+            [
+                InlineKeyboardButton(text="✅ Approved", callback_data="export_approved_members"),
+                InlineKeyboardButton(text="❌ Rejected", callback_data="export_rejected_members")
+            ],
+
+            [
+                InlineKeyboardButton( text="⏳ Pending", callback_data="export_pending_members")
             ]
         ]
     )
